@@ -4,8 +4,8 @@ import requests
 app = Flask(__name__)
 
 # ✅ Your API keys
-WEATHER_API_KEY = "edcc6078ab2e4cc8847100037250108"  # WeatherAPI key
-GEMINI_API_KEY = "AIzaSyA3jXJFQ_yV_dgnhQBeVIpev-If6VPPYM4"  # Gemini key
+WEATHER_API_KEY = "ed api key   108"  # WeatherAPI key
+GEMINI_API_KEY = "AIzapi key   PYM4"  # Gemini key
 
 @app.route("/")
 def home():
@@ -65,3 +65,4 @@ def ask_gemini():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
