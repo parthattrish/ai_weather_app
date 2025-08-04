@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌤 Weather Assistant</title>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #eef2f3;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin: 50px auto;
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+        }
+        input, textarea {
+            padding: 10px;
+            width: 60%;
+            margin: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            background: #4a90e2;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #357ABD;
+        }
+        .weather-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0px 1px 5px rgba(0,0,0,0.05);
+            transition: 0.5s;
+        }
+        .response-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            min-height: 50px;
+            box-shadow: inset 0px 1px 5px rgba(0,0,0,0.05);
+        }
+        .query-section {
+            margin-top: 20px;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        h2 {
+            font-size: 20px;
+        }
+        /* ✅ Weather Themes */
+        .sunny {
+            background: linear-gradient(to bottom, #FFD93D, #FF8C00);
+        }
+        .rainy {
+            background: linear-gradient(to bottom, #4facfe, #00f2fe);
+        }
+        .cloudy {
+            background: linear-gradient(to bottom, #bdc3c7, #2c3e50);
+        }
+        .night {
+            background: linear-gradient(to bottom, #2c3e50, #000000);
+        }
+        .default-weather {
+            background: linear-gradient(to bottom, #4a90e2, #357ABD);
+        }
+        .weather-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+        /* ✅ Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            padding-top: 100px; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        /* ✅ Quick Suggestion Buttons */
+        .suggestions {
+            margin-top: 10px;
+        }
+        .suggestions button {
+            background: #6c63ff;
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+        .suggestions button:hover {
+            background: #5048d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤 Weather Assistant</h1>
+
+        <!-- Location input -->
+        <input type="text" id="locationInput" placeholder="Enter city name">
+        <button onclick="getWeather()">Get Weather</button>
+
+        <!-- Weather info box -->
+        <div id="weatherData" class="weather-box default-weather">⛅ Weather info will appear here</div>
+
+        <!-- Ask Gemini section -->
+        <div class="query-section">
+            <h2>Ask about:</h2>
+            <button onclick="askGemini('Will it rain today?', 'weather')">🌧 Will it rain today?</button>
+            <button onclick="askGemini('Crops to grow this season', 'weather')">🌾 Crops to grow</button>
+            <button onclick="askGemini('Safety measures for this weather', 'weather')">🛡 Safety measures</button>
+            <button onclick="openModal()">❓ Other</button>
+        </div>
+
+        <!-- Gemini response box -->
+        <div id="geminiResponse" class="response-box"></div>
+    </div>
+
+    <!-- ✅ Modal for "Other" questions -->
+    <div id="otherModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Ask anything about AI, tech, or any topic:</h3>
+            <textarea id="otherQuestion" rows="3" placeholder="Type your question here..."></textarea><br>
+            <button onclick="submitOtherQuestion()">Ask Gemini</button>
+
+            <!-- ✅ Quick suggestion buttons -->
+            <div class="suggestions">
+                <p><strong>Try these:</strong></p>
+                <button onclick="askFromSuggestion('What is AI?')">✨ What is AI?</button>
+                <button onclick="askFromSuggestion('What is the future of robots?')">🤖 Future of robots?</button>
+                <button onclick="askFromSuggestion('Top tech trends in 2025')">📈 Top tech trends 2025</button>
+                <button onclick="askFromSuggestion('How does virtual reality work?')">🎮 How does VR work?</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ✅ Fetch weather from backend
+        async function getWeather() {
+            const location = document.getElementById("locationInput").value;
+            const weatherBox = document.getElementById("weatherData");
+
+            if (!location) {
+                weatherBox.innerHTML = "⚠ Please enter a location.";
+                weatherBox.className = "weather-box default-weather";
+                return;
+            }
+
+            weatherBox.innerHTML = "⏳ Fetching weather...";
+            weatherBox.className = "weather-box default-weather";
+
+            try {
+                const res = await fetch("/get_weather", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ city: location })
+                });
+
+                const data = await res.json();
+                console.log("Weather API response:", data);
+
+                if (data.error) {
+                    weatherBox.innerHTML = `❌ ${data.error.message}`;
+                } else {
+                    // ✅ Determine theme & emoji
+                    let condition = data.current.condition.text.toLowerCase();
+                    let icon = "⛅";
+                    let theme = "default-weather";
+
+                    if (condition.includes("sunny") || condition.includes("clear")) {
+                        icon = "☀";
+                        theme = "sunny";
+                    } else if (condition.includes("rain")) {
+                        icon = "🌧";
+                        theme = "rainy";
+                    } else if (condition.includes("cloud")) {
+                        icon = "☁";
+                        theme = "cloudy";
+                    } else if (condition.includes("snow")) {
+                        icon = "❄";
+                        theme = "cloudy";
+                    } else if (condition.includes("night")) {
+                        icon = "🌙";
+                        theme = "night";
+                    }
+
+                    weatherBox.className = `weather-box ${theme}`;
+                    weatherBox.innerHTML = `
+                        <div class="weather-icon">${icon}</div>
+                        <h3>${data.location.name}, ${data.location.country}</h3>
+                        🌡 Temp: ${data.current.temp_c}°C <br>
+                        ☁ Weather: ${data.current.condition.text} <br>
+                        💧 Humidity: ${data.current.humidity}% <br>
+                        🌬 Wind: ${data.current.wind_kph} kph
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                weatherBox.innerHTML = "❌ Error fetching weather.";
+                weatherBox.className = "weather-box default-weather";
+            }
+        }
+
+        // ✅ Ask Gemini
+        async function askGemini(question, category = "weather") {
+            const geminiBox = document.getElementById("geminiResponse");
+            const city = document.getElementById("locationInput").value;
+
+            if (category !== "other" && !city) {
+                geminiBox.innerHTML = "⚠ Please enter a city first.";
+                return;
+            }
+
+            if (!question) {
+                geminiBox.innerHTML = "❌ No question asked.";
+                return;
+            }
+
+            geminiBox.innerHTML = "⏳ Thinking...";
+
+            try {
+                const res = await fetch("/ask_gemini", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: question, city: city, category: category })
+                });
+
+                const data = await res.json();
+                geminiBox.innerHTML = data.answer;
+            } catch (error) {
+                console.error(error);
+                geminiBox.innerHTML = "❌ Error fetching Gemini response.";
+            }
+        }
+
+        // ✅ Modal functions
+        function openModal() {
+            document.getElementById("otherModal").style.display = "block";
+        }
+        function closeModal() {
+            document.getElementById("otherModal").style.display = "none";
+        }
+        async function submitOtherQuestion() {
+            const question = document.getElementById("otherQuestion").value;
+            closeModal();
+            askGemini(question, "other");
+        }
+
+        // ✅ Suggestion buttons ka function
+        function askFromSuggestion(question) {
+            closeModal();
+            askGemini(question, "other");
+        }
+
+        // ✅ Close modal when clicking outside content
+        window.onclick = function(event) {
+            const modal = document.getElementById("otherModal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
+
+
